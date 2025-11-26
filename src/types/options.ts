@@ -46,4 +46,5 @@ export interface ResolvedPluginOptions extends Required<UniPagesPluginOptions> {
   dts: string | false;
   pagesJsonFilePath: string;
   pagesConfigFilePath: string;
+  watchPageFileDirs: string[];
 }

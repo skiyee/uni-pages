@@ -99,7 +99,7 @@ export class PagesConfigFile {
     if (!this.isChanged) {
       const json = this.jsonMap.get(platform)
       if (json) {
-        logger.info('获取到缓冲的 pages.config 配置')
+        logger.info('[get page config by platform]', `Platform: ${platform}`, '获取到缓冲的 pages.config 配置')
         return deepCopy(json)
       }
     }

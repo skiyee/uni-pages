@@ -4,6 +4,7 @@ import type { Page, SubPackage, TabBarItem } from '../interface'
 import type { ResolvedPluginOptions } from '../types/options'
 
 import { platform as currentPlatform } from '@uni-helper/uni-env'
+import anymatch from 'anymatch'
 import fg from 'fast-glob'
 import path from 'pathe'
 
@@ -67,36 +68,41 @@ export class FileManager {
   /**
    * 增量扫描指定文件
    */
-  async scanBy(filePaths: string[]): Promise<Map<string, PageFile>> {
-    for (const filePath of filePaths) {
-      const absFilePath = path.isAbsolute(filePath) ? filePath : path.resolve(this.options.root, filePath)
+  scanBy(filePath: string): PageFile | undefined {
+    const absFilePath = path.isAbsolute(filePath) ? path.normalize(filePath) : path.resolve(this.options.root, filePath)
 
-      // 检查文件路径是否为有效的页面路径
-      if (!this.isValidPagePath(absFilePath)) {
-        continue
-      }
-
-      // 是否属于 分包目录中 的页面路径
-      const subPackageDir = this.options.subPackageDirs.find(dir => absFilePath.startsWith(dir))
-      if (subPackageDir) {
-        const root = path.basename(subPackageDir)
-        const pagePath = this.toPagePath(subPackageDir, absFilePath)
-        const pageFile = this.files.get(absFilePath) || new PageFile({ filePath: absFilePath, pagePath, root })
-
-        logger.debug('scan incremental sub package', `pageFilePath: ${pageFile.filePath}`, `pagePath: ${pagePath}`, `root: ${root}`)
-        this.files.set(absFilePath, pageFile)
-      }
-      else {
-        const pagePath = this.toPagePath(this.options.src, absFilePath)
-        const pageFile = this.files.get(absFilePath) || new PageFile({ filePath: absFilePath, pagePath })
-
-        logger.debug('scan incremental main package', `pageFilePath: ${pageFile.filePath}`, `pagePath: ${pagePath}`)
-
-        this.files.set(absFilePath, pageFile)
-      }
+    // 检查文件路径是否为有效的页面路径
+    if (!this.validBy(absFilePath)) {
+      return
     }
 
-    return this.files
+    // 是否有过缓冲
+    if (this.files.has(absFilePath)) {
+      return this.getBy(absFilePath)
+    }
+
+    // 是否属于 分包目录中 的页面路径
+    const subPackageDir = this.options.subPackageDirs.find(dir => absFilePath.startsWith(dir))
+    if (subPackageDir) {
+      const root = path.basename(subPackageDir)
+      const pagePath = this.toPagePath(subPackageDir, absFilePath)
+      const pageFile = this.files.get(absFilePath) || new PageFile({ filePath: absFilePath, pagePath, root })
+
+      logger.debug('scan incremental sub package', `pageFilePath: ${pageFile.filePath}`, `pagePath: ${pagePath}`, `root: ${root}`)
+      this.files.set(absFilePath, pageFile)
+
+      return pageFile
+    }
+    else {
+      const pagePath = this.toPagePath(this.options.src, absFilePath)
+      const pageFile = this.files.get(absFilePath) || new PageFile({ filePath: absFilePath, pagePath })
+
+      logger.debug('scan incremental main package', `pageFilePath: ${pageFile.filePath}`, `pagePath: ${pagePath}`)
+
+      this.files.set(absFilePath, pageFile)
+
+      return pageFile
+    }
   }
 
   /**
@@ -107,18 +113,41 @@ export class FileManager {
   }
 
   /**
+   * 是否符合条件的文件
+   */
+  validBy(absFilePath: string) {
+    absFilePath = path.normalize(absFilePath)
+    // 后缀检查
+    if (!PageFile.exts.includes(path.extname(absFilePath))) {
+      return false
+    }
+
+    // TODO: 这里面需要注意被过滤的页面
+
+    // 页面目录组的前缀检查
+    const validPageFileDirs = [this.options.pageDir, ...this.options.subPackageDirs]
+    const isValidPage = validPageFileDirs.some(dir => absFilePath.startsWith(dir))
+
+    const excludePatterns = this.options.excludes.map(item => path.resolve(this.options.src, item))
+    const isExcludePage = anymatch(excludePatterns, absFilePath)
+    return isValidPage && !isExcludePage
+  }
+
+  /**
    * 获取指定文件
    * @param filePath 绝对文件路径
    */
   getBy(filePath: string): PageFile | undefined {
-    return this.files.get(filePath)
+    logger.info('从缓冲的文件映射中获取文件信息', `FilePath: ${filePath}`)
+    return this.files.get(path.normalize(filePath))
   }
 
   /**
    * 移除指定文件
    */
-  removeBy(filepath: string): boolean {
-    return this.files.delete(filepath)
+  removeBy(filePath: string): boolean {
+    logger.info('从缓冲的文件映射中移除文件信息', `FilePath: ${filePath}`)
+    return this.files.delete(path.normalize(filePath))
   }
 
   /**
@@ -227,20 +256,6 @@ export class FileManager {
     logger.debug('[get tabbar meta list]', `platform: ${platform}`)
 
     return tabbarMetaList
-  }
-
-  /**
-   * 检查文件路径是否为有效的页面路径
-   */
-  isValidPagePath(absFilePath: string): boolean {
-    // 后缀检查
-    if (!PageFile.exts.includes(path.extname(absFilePath))) {
-      return false
-    }
-
-    // 页面目录组的前缀检查
-    const validPageFileDirs = [this.options.pageDir, ...this.options.subPackageDirs]
-    return validPageFileDirs.some(dir => absFilePath.startsWith(dir))
   }
 
   /**

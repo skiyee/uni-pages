@@ -37,7 +37,6 @@ export class PagesJsonFile {
     private readonly pagesConfig: PagesConfigFile,
     private readonly fileManager: FileManager,
     private readonly platformMerger = new PlatformMerger(),
-
   ) {}
 
   /**
@@ -384,10 +383,14 @@ declare interface Uni {
     // 取出对应平台的pages.json
     const jsonMap = {} as Record<BuiltInPlatform, PagesJson>
     for (const platform of platforms) {
-      jsonMap[platform] = await this.generate(platform)
+      // 只生成当前平台
+      if (platform === currentPlatform) {
+        jsonMap[platform] = await this.generate(platform)
+      }
     }
 
     const pagesJson = this.platformMerger.merge(jsonMap, indent, eof)
+    logger.info('pages.json 获取')
 
     if (!this.shouldUpdate(pagesJson)) {
       logger.info('pages.json 内容无改动，跳过写入')

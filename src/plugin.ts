@@ -3,8 +3,10 @@ import type { PluginOption } from 'vite'
 
 import type { UniPagesPluginOptions } from './types/options'
 
+import anymatch from 'anymatch'
 import chokidar from 'chokidar'
 import MagicString from 'magic-string'
+import path from 'pathe'
 
 import { FileManager } from './core/file-manager'
 import { resolvePluginOptions } from './core/options'
@@ -13,17 +15,17 @@ import { PagesJsonFile } from './core/pages-json-file'
 import { logger } from './utils/debug'
 
 export default function UniPagesPlugin(options: UniPagesPluginOptions = {}): PluginOption {
-  let watcher: FSWatcher | null = null
+  const watchers: FSWatcher[] = []
 
-  const uniPagesPluginOption = resolvePluginOptions(options)
-  logger.debug(uniPagesPluginOption)
+  const resolvedOptions = resolvePluginOptions(options)
+  logger.debug(resolvedOptions)
 
-  const pagesConfigFile = new PagesConfigFile(uniPagesPluginOption)
+  const pagesConfigFile = new PagesConfigFile(resolvedOptions)
 
-  const fileManager = new FileManager(uniPagesPluginOption)
+  const fileManager = new FileManager(resolvedOptions)
 
   const pagesJsonFile = new PagesJsonFile(
-    uniPagesPluginOption,
+    resolvedOptions,
     pagesConfigFile,
     fileManager,
   )
@@ -41,23 +43,48 @@ export default function UniPagesPlugin(options: UniPagesPluginOptions = {}): Plu
       await pagesJsonFile.set()
     },
     buildStart() {
-      watcher = chokidar.watch(uniPagesPluginOption.pagesConfigFilePath).on('all', async (event) => {
+      const pageFileWatcher = chokidar.watch(resolvedOptions.watchPageFileDirs)
+      pageFileWatcher.on('add', async (filePath) => {
+        const pageFile = fileManager.scanBy(filePath)
+        if (!pageFile) {
+          return
+        }
+        logger.debug('新增监听触发')
+
+        if (pageFile.hasChanged()) {
+          await pagesJsonFile.set()
+        }
+      })
+      pageFileWatcher.on('unlink', async (filePath) => {
+        const pageFile = fileManager.scanBy(filePath)
+        if (!pageFile) {
+          return
+        }
+        logger.debug('移除监听触发')
+
+        fileManager.removeBy(filePath)
+
+        await pagesJsonFile.set()
+      })
+      watchers.push(pageFileWatcher)
+
+      const pagesConfigWatcher = chokidar.watch(resolvedOptions.pagesConfigFilePath)
+      pagesConfigWatcher.on('all', async (event) => {
         if (['add', 'change'].includes(event)) {
           await pagesConfigFile.read()
-
           if (pagesConfigFile.hasChanged) {
             await pagesJsonFile.set()
           }
         }
       })
+      watchers.push(pagesConfigWatcher)
     },
     async transform(code: string, id: string) {
-      const pageFile = fileManager.getBy(id)
-      // 判断是否已注册的页面
+      // 扫描当前页面
+      const pageFile = fileManager.scanBy(id)
       if (!pageFile) {
         return
       }
-      logger.info('触发热更新', `filePath: ${id}`)
 
       const macro = await pageFile.getMacroBy(code)
 
@@ -83,9 +110,7 @@ export default function UniPagesPlugin(options: UniPagesPluginOptions = {}): Plu
       }
     },
     buildEnd() {
-      if (watcher) {
-        watcher.close()
-      }
+      watchers.length && watchers.map(watcher => watcher.close())
     },
   }
 }
