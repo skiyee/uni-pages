@@ -20,5 +20,3 @@ dist
 *.sln
 *.sw?
 
-src/pages.json
-pages.d.ts

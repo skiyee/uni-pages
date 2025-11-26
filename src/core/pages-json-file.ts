@@ -394,9 +394,11 @@ declare interface Uni {
     this.lastJson = pagesJson
 
     await this.write(pagesJson)
+    logger.info('pages.json 生成')
 
     if (this.options.dts) {
       await this.writeDeclaration(jsonMap, this.options.dts)
+      logger.info('pages.d.ts 生成')
     }
   }
 

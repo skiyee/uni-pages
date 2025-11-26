@@ -15,7 +15,7 @@ export function resolvePluginOptions(options: UniPagesPluginOptions): ResolvedPl
     dts = true,
     pageDir = 'pages',
     subPackageDirs = [],
-    excludeDirs = ['node_modules', '.git', '**/__*__/**'],
+    excludes = ['node_modules', '.git', '**/__*__/**'],
     debug = false,
   } = options
 
@@ -30,7 +30,7 @@ export function resolvePluginOptions(options: UniPagesPluginOptions): ResolvedPl
   const absSubPackageDirs = subPackageDirs.map(dir => path.isAbsolute(dir) ? dir : path.resolve(src, dir))
   const absDts = dts === true
     ? path.resolve(src, 'pages.d.ts')
-    : (typeof dts === 'string' && (path.isAbsolute(dts) ? dts : path.resolve(src, dts)))
+    : (typeof dts === 'string' && (path.isAbsolute(dts) ? path.join(root, dts) : path.resolve(src, dts)))
 
   const absPagesJsonFilePath = path.resolve(src, 'pages.json')
   const absPagesConfigFilePath = PagesConfigFile.getPath(src)
@@ -40,7 +40,7 @@ export function resolvePluginOptions(options: UniPagesPluginOptions): ResolvedPl
     src: path.resolve(src),
     pageDir: absPageDir,
     subPackageDirs: absSubPackageDirs,
-    excludeDirs,
+    excludes,
     dts: absDts,
     debug,
     pagesJsonFilePath: absPagesJsonFilePath,

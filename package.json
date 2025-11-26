@@ -3,8 +3,8 @@
   "type": "module",
   "version": "0.0.3-beta.1",
   "packageManager": "pnpm@10.18.0",
-  "description": "在 UniApp 的页面中直接定义页面参数",
-  "author": "Edwin Xu <edwinhuish@gmail.com>, skiyee <319619193@qq.com>",
+  "description": "在 UniApp 页面文件中通过 definePageMeta 定义页面参数",
+  "author": "skiyee <319619193@qq.com>",
   "license": "MIT",
   "homepage": "https://github.com/skiyee/uni-pages",
   "repository": {

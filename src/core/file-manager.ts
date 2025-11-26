@@ -2,7 +2,6 @@ import type { BuiltInPlatform } from '@uni-helper/uni-env'
 
 import type { Page, SubPackage, TabBarItem } from '../interface'
 import type { ResolvedPluginOptions } from '../types/options'
-import type { PagesConfigFile } from './pages-config-file'
 
 import { platform as currentPlatform } from '@uni-helper/uni-env'
 import fg from 'fast-glob'
@@ -20,7 +19,6 @@ export class FileManager {
 
   constructor(
     private readonly options: ResolvedPluginOptions,
-    private readonly pagesConfig: PagesConfigFile,
   ) {}
 
   /**
@@ -249,10 +247,15 @@ export class FileManager {
    * 列出指定目录下的所有页面文件路径
    */
   private listAbsFilePath(dir: string): string[] {
-    const source = PageFile.exts.map(ext => `${fg.convertPathToPattern(dir)}/**/*${ext}`)
+    const relativeDir = path.relative(this.options.root, dir)
+    const source = PageFile.exts.map(ext => `${fg.convertPathToPattern(relativeDir)}/**/*${ext}`)
+    const ignore = this.options.excludes.map(item => fg.convertPathToPattern(
+      path.relative(this.options.root, path.join(this.options.src, item))),
+    )
+
     const paths = fg.sync(source, {
       cwd: fg.convertPathToPattern(this.options.root),
-      ignore: this.options.excludeDirs,
+      ignore,
       onlyFiles: true,
       unique: true,
       absolute: true,

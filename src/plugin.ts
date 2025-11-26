@@ -16,10 +16,7 @@ export default function UniPagesPlugin(options: UniPagesPluginOptions = {}): Plu
 
   const pagesConfigFile = new PagesConfigFile(uniPagesPluginOption)
 
-  const fileManager = new FileManager(
-    uniPagesPluginOption,
-    pagesConfigFile,
-  )
+  const fileManager = new FileManager(uniPagesPluginOption)
 
   const pagesJsonFile = new PagesJsonFile(
     uniPagesPluginOption,
@@ -34,8 +31,6 @@ export default function UniPagesPlugin(options: UniPagesPluginOptions = {}): Plu
     name: 'uni-pages',
     enforce: 'pre',
     async configResolved() {
-      console.log('被执行了')
-
       // 扫描并注册页面信息
       await fileManager.scan()
       // 设置 pages.json 文件

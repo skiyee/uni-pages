@@ -1,4 +1,4 @@
-import { defineConfig } from 'uni-pages';
+import { defineConfig } from 'uni-pages'
 
 export default defineConfig(({ platform }) => {
   return {
@@ -19,6 +19,7 @@ export default defineConfig(({ platform }) => {
     subPackages: [
       {
         root: 'pages-sub',
+        pages: [],
         plugins: {
           'uni-id-pages': {
             version: '1.0.0',
@@ -27,5 +28,5 @@ export default defineConfig(({ platform }) => {
         },
       },
     ],
-  };
-});
+  }
+})
