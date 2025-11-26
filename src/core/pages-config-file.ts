@@ -79,10 +79,7 @@ export class PagesConfigFile {
     this.isChanged = this.currentCode !== this.lastCode
     this.lastCode = this.currentCode
 
-    // TODO
-    if (this.isChanged) {
-      this.jsonMap.clear()
-    }
+    logger.info('已读取 pages.config 文件')
   }
 
   /**
@@ -98,10 +95,13 @@ export class PagesConfigFile {
       return
     }
 
-    // 拿到缓冲数据
-    const json = this.jsonMap.get(platform)
-    if (json) {
-      return deepCopy(json)
+    // 如果没有被更改，尝试从缓冲获取
+    if (!this.isChanged) {
+      const json = this.jsonMap.get(platform)
+      if (json) {
+        logger.info('获取到缓冲的 pages.config 配置')
+        return deepCopy(json)
+      }
     }
 
     const parsed = await parseCode({
@@ -115,9 +115,11 @@ export class PagesConfigFile {
       : await Promise.resolve(parsed)
 
     this.jsonMap.set(platform, res)
+    logger.info('按平台储存 pages.config 配置')
 
     this.isChanged = false
 
+    logger.info('获取到全新的 pages.config 配置')
     return deepCopy(res)
   }
 }

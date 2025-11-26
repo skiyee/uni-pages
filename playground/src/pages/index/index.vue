@@ -5,8 +5,8 @@ const title = ref('Hello')
 
 definePageMeta(() => ({
   style: {
-    navigationBarTitleText: 'Hello 123321',
-    animationType: 'pop-in',
+    navigationBarTitleText: 'Hello 123',
+    animationType: 'slide-in-bottom',
   },
 }))
 </script>

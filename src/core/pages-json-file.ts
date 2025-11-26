@@ -14,7 +14,7 @@ import path from 'pathe'
 
 import { logger } from '../utils/debug'
 import { checkFile, writeFileWithLock } from '../utils/file'
-import { deepAssign } from '../utils/object'
+import { deepAssign, deepMerge } from '../utils/object'
 import { getPageType, getTabbarIndex } from './page-file'
 import { PlatformMerger } from './platform-merger'
 
@@ -287,7 +287,7 @@ declare interface Uni {
       for (const pageMeta of mainPackageMetaList) {
         const idx = pagesConfig.pages.findIndex(p => p.path === pageMeta.path)
         if (idx !== -1) {
-          deepAssign(pagesConfig.pages[idx], pageMeta)
+          pagesConfig.pages[idx] = deepMerge(pageMeta, pagesConfig.pages[idx])
         }
         else {
           pagesConfig.pages.push(pageMeta)
@@ -309,7 +309,10 @@ declare interface Uni {
           for (const pageMeta of (subPackageMetaList.pages || [])) {
             const pageMetaIdx = pagesConfig.subPackages[idx].pages.findIndex(p => p.path === pageMeta.path)
             if (pageMetaIdx !== -1) {
-              deepAssign(pagesConfig.subPackages[idx].pages[pageMetaIdx], pageMeta)
+              pagesConfig.subPackages[idx].pages[pageMetaIdx] = deepMerge(
+                pageMeta,
+                pagesConfig.subPackages[idx].pages[pageMetaIdx],
+              )
             }
             else {
               pagesConfig.subPackages[idx].pages.push(pageMeta)
@@ -331,7 +334,7 @@ declare interface Uni {
       for (const tabbarMeta of tabbarMetaList) {
         const idx = pagesConfig.tabBar.list.findIndex(item => item.pagePath === tabbarMeta.pagePath)
         if (idx !== -1) {
-          deepAssign(pagesConfig.tabBar.list[idx], tabbarMeta)
+          pagesConfig.tabBar.list[idx] = deepMerge(tabbarMeta, pagesConfig.tabBar.list[idx])
         }
         else {
           pagesConfig.tabBar.list.push(tabbarMeta)

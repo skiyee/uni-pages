@@ -10,8 +10,8 @@
     {
       "path": "pages/index/index",
       "style": {
-        "navigationBarTitleText": "Hello 123321",
-        "animationType": "pop-in"
+        "navigationBarTitleText": "uni-app 321",
+        "animationType": "slide-in-bottom"
       }
     }
   ],

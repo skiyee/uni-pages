@@ -11,9 +11,9 @@ export default defineConfig(({ platform }) => {
     pages: [ // pages数组中第一项表示应用启动页，参考：https://uniapp.dcloud.io/collocation/pages
       {
         path: 'pages/index/index',
-        // style: {
-        // navigationBarTitleText: 'uni-app',
-        // },
+        style: {
+          navigationBarTitleText: 'uni-app 321',
+        },
       },
     ],
     subPackages: [
