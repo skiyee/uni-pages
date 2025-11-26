@@ -1,0 +1,8 @@
+packages:
+  - .
+  - playground
+
+onlyBuiltDependencies:
+  - core-js
+  - esbuild
+  - unrs-resolver
