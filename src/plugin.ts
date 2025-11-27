@@ -86,7 +86,7 @@ export default function UniPagesPlugin(options: UniPagesPluginOptions = {}): Plu
         return
       }
 
-      const macro = await pageFile.getMacroBy(code)
+      const macro = await pageFile.setBy(code)
 
       if (!macro) {
         return

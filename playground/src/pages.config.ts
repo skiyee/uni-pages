@@ -12,7 +12,7 @@ export default defineConfig(({ platform }) => {
       {
         path: 'pages/index/index',
         style: {
-          navigationBarTitleText: 'uni-app 3',
+          // navigationBarTitleText: 'uni-app 3',
         },
       },
     ],

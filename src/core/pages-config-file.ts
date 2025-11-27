@@ -14,7 +14,7 @@ import { deepCopy } from '../utils/object'
 import { parseCode } from '../utils/parser'
 
 export async function defineConfig(args: DefineConfigInput): Promise<PagesJson> {
-  return typeof args === 'function' ? await args({ platform: currentPlatform }) : args
+  return args
 }
 
 export class PagesConfigFile {

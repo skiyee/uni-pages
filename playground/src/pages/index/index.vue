@@ -3,9 +3,9 @@ import { ref } from 'vue'
 
 const title = ref('Hello')
 
-definePageMeta(() => ({
+definePageMeta(({ platform }) => ({
   style: {
-    navigationBarTitleText: 'Hello 123',
+    navigationBarTitleText: platform === 'h5' ? 'Hello web' : 'Hello',
     animationType: 'slide-in-bottom',
   },
 }))

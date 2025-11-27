@@ -73,7 +73,7 @@ export class PageFile {
 
   async getTabbarItem({ platform = currentPlatform, forceRead = false }: { platform?: BuiltInPlatform; forceRead?: boolean } = {}): Promise<TabBarItem | undefined> {
     if (forceRead || !this.source) {
-      await this.getMacroBy()
+      await this.setBy()
     }
     if (!this.metaMap.has(platform)) {
       await this.parsePageMeta({ platform })
@@ -144,7 +144,7 @@ export class PageFile {
    * 获取宏信息
    * @param source 指定文件内容，为空则读取文件
    */
-  async getMacroBy(source?: string) {
+  async setBy(source?: string) {
     // 获取当前 PageFile 源码
     this.source = source ?? await fs.readFile(this.filePath, { encoding: 'utf-8' })
 
@@ -204,14 +204,10 @@ export class PageFile {
       return undefined
     }
 
-    const env: Record<string, any> = {
-      UNI_PLATFORM: platform,
-    }
-
     const parsed = await parseCode({
       code: this.macro.preparedCode,
       filename: this.filePath,
-      env,
+      env: { UNI_PLATFORM: platform },
     })
 
     const meta = typeof parsed === 'function'
@@ -230,7 +226,7 @@ export class PageFile {
     forceRead?: boolean;
   } = {}): Promise<Page> {
     if (forceRead || !this.source) {
-      await this.getMacroBy()
+      await this.setBy()
     }
 
     // 如果被改变或者未被转义过

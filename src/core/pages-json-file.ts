@@ -32,6 +32,8 @@ export class PagesJsonFile {
   private cachedInfo?: StaticJsonFileInfo
   private lastJson: string = ''
 
+  private inactiveMap = new Map<BuiltInPlatform, PagesJson>()
+
   constructor(
     private readonly options: ResolvedPluginOptions,
     private readonly pagesConfig: PagesConfigFile,
@@ -171,6 +173,7 @@ export class PagesJsonFile {
               if (!pf) {
                 continue
               }
+
               res.platforms.add(pf as BuiltInPlatform)
             }
           }
@@ -383,8 +386,11 @@ declare interface Uni {
     // 取出对应平台的pages.json
     const jsonMap = {} as Record<BuiltInPlatform, PagesJson>
     for (const platform of platforms) {
-      // 只生成当前平台
-      if (platform === currentPlatform) {
+      if (platform !== currentPlatform) {
+        jsonMap[platform] = this.inactiveMap.get(platform) || await this.generate(platform)
+        this.inactiveMap.set(platform, jsonMap[platform])
+      }
+      else {
         jsonMap[platform] = await this.generate(platform)
       }
     }
