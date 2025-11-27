@@ -228,7 +228,8 @@ export class FileManager {
       subPackages[pageFile.root] ??= { root: pageFile.root, pages: [] }
 
       const pageMeta = await pageFile.getPageMeta({ platform })
-      // warn: 有可能pages属性不存在
+
+      subPackages[pageFile.root].pages ??= []
       subPackages[pageFile.root].pages.push(pageMeta)
     }
 
