@@ -128,7 +128,7 @@ export class FileManager {
     const validPageFileDirs = [this.options.pageDir, ...this.options.subPackageDirs]
     const isValidPage = validPageFileDirs.some(dir => absFilePath.startsWith(dir))
 
-    const excludePatterns = this.options.excludes.map(item => path.resolve(this.options.src, item))
+    const excludePatterns = this.options.excludePages.map(item => path.resolve(this.options.src, item))
     const isExcludePage = anymatch(excludePatterns, absFilePath)
     return isValidPage && !isExcludePage
   }
@@ -265,7 +265,7 @@ export class FileManager {
   private listAbsFilePath(dir: string): string[] {
     const relativeDir = path.relative(this.options.root, dir)
     const source = PageFile.exts.map(ext => `${fg.convertPathToPattern(relativeDir)}/**/*${ext}`)
-    const ignore = this.options.excludes.map(item => fg.convertPathToPattern(
+    const ignore = this.options.excludePages.map(item => fg.convertPathToPattern(
       path.relative(this.options.root, path.join(this.options.src, item))),
     )
 

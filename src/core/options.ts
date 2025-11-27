@@ -15,7 +15,7 @@ export function resolvePluginOptions(options: UniPagesPluginOptions): ResolvedPl
     dts = true,
     pageDir = 'pages',
     subPackageDirs = [],
-    excludes = [],
+    excludePages = [],
     debug = false,
   } = options
 
@@ -45,7 +45,7 @@ export function resolvePluginOptions(options: UniPagesPluginOptions): ResolvedPl
     src: path.resolve(src),
     pageDir: absPageDir,
     subPackageDirs: absSubPackageDirs,
-    excludes,
+    excludePages,
     dts: absDts,
     debug,
     pagesJsonFilePath: absPagesJsonFilePath,

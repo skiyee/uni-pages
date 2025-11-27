@@ -10,7 +10,7 @@ export default defineConfig({
       subPackageDirs: ['pages-sub'],
       dts: 'types/pages.d.ts',
       debug: true,
-      excludes: ['pages/define-page/**'],
+      excludePages: ['pages/define-page/**'],
     }),
     uni(),
   ],

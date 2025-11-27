@@ -24,10 +24,10 @@ export interface UniPagesPluginOptions {
   subPackageDirs?: string[];
 
   /**
-   * 排除条件，应用于 pages 和 subPackages 的文件
-   * @example ['pages/exclude.vue', 'sub-pages/exclude/*.vue']
+   * 排除页面，可排除 主包 或 分包 中的页面文件
+   * @example ['pages/exclude.vue', 'sub-pages/exclude/*.vue', 'sub-pages/exclude']
    */
-  excludes?: string[];
+  excludePages?: string[];
 
   /**
    * 页面路径的 TypeScript 声明，false 时不生成
