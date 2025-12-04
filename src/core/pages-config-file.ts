@@ -8,6 +8,7 @@ import fs from 'node:fs'
 
 import { platform as currentPlatform } from '@uni-helper/uni-env'
 import fg from 'fast-glob'
+import path from 'pathe'
 
 import { logger } from '../utils/debug'
 import { deepCopy } from '../utils/object'
@@ -41,39 +42,54 @@ export class PagesConfigFile {
 
   static readonly basename = 'pages.config'
   static readonly exts = ['.ts', '.mts', '.cts', '.js', '.cjs', '.mjs']
+  static readonly globPath = `${PagesConfigFile.basename}.{${PagesConfigFile.exts.map(ext => ext.slice(1)).join(',')}}`
 
-  constructor(private readonly options: ResolvedPluginOptions) {
-    this.filePath = options.pagesConfigFilePath
-  }
+  constructor(private readonly options: ResolvedPluginOptions) {}
 
-  static getPath(src: string) {
-    const pagesConfigFilePathGlobPattern = `${this.basename}.{${this.exts.map(ext => ext.slice(1)).join(',')}}`
-    const pagesConfigFilePath = fg.globSync(pagesConfigFilePathGlobPattern, {
-      cwd: src,
-      absolute: true,
-    })[0]
-
-    return pagesConfigFilePath
+  /**
+   * 获取监听路径
+   */
+  static getWatchPath(src: string) {
+    return path.join(src, this.globPath)
   }
 
   /**
-   * 是否有更改
+   * 初始检查
    */
-  get hasChanged(): boolean {
-    return this.isChanged
+  check() {
+    const pagesConfigFilePaths = fg.globSync(PagesConfigFile.globPath, {
+      cwd: this.options.src,
+      absolute: true,
+    })
+    if (pagesConfigFilePaths.length !== 0) {
+      this.setPath(pagesConfigFilePaths[0])
+      this.read()
+    }
   }
 
   /**
    * 设置文件路径
    */
   setPath(filePath: string): void {
-    this.filePath = filePath
+    this.filePath = path.normalize(filePath)
+  }
+
+  /**
+   * 是否有更改
+   */
+  get hasChanged() {
+    return this.isChanged
   }
 
   /**
    * 读取 pages.config 文件
    */
   async read(): Promise<void> {
+    if (!this.filePath) {
+      logger.warn('pages.config.x 配置文件不存在，请新增后再继续')
+      return
+    }
+
     this.currentCode = await fs.promises.readFile(this.filePath, { encoding: 'utf-8' })
 
     this.isChanged = this.currentCode !== this.lastCode
@@ -86,12 +102,11 @@ export class PagesConfigFile {
    * 获取 pages.config 解析后的 json
    */
   async getByPlatform(platform: BuiltInPlatform = currentPlatform, isForce: boolean = false): Promise<PagesJson | undefined> {
-    if (isForce || !this.currentCode) {
+    if (isForce) {
       await this.read()
     }
 
     if (!this.filePath || !this.currentCode) {
-      logger.warn('pages.json.x 路径或者未被填写')
       return
     }
 

@@ -33,7 +33,7 @@ export function resolvePluginOptions(options: UniPagesPluginOptions): ResolvedPl
     : (typeof dts === 'string' && (path.isAbsolute(dts) ? path.join(root, dts) : path.resolve(src, dts)))
 
   const absPagesJsonFilePath = path.resolve(src, 'pages.json')
-  const absPagesConfigFilePath = PagesConfigFile.getPath(src)
+  const absPagesConfigFileWatchPath = PagesConfigFile.getWatchPath(src)
 
   const watchPageFileDirs = [
     absPageDir,
@@ -49,7 +49,7 @@ export function resolvePluginOptions(options: UniPagesPluginOptions): ResolvedPl
     dts: absDts,
     debug,
     pagesJsonFilePath: absPagesJsonFilePath,
-    pagesConfigFilePath: absPagesConfigFilePath,
+    pagesConfigFileWatchPath: absPagesConfigFileWatchPath,
     watchPageFileDirs,
   }
 }

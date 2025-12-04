@@ -93,7 +93,7 @@ export class PageFile {
     }
   }
 
-  hasChanged() {
+  get hasChanged() {
     return this.isChanged
   }
 

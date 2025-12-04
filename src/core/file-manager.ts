@@ -40,7 +40,7 @@ export class FileManager {
         const pagePath = this.toPagePath(path.resolve(this.options.root, dir), filePath)
         const pageFile = this.files.get(filePath) || new PageFile({ filePath, pagePath, root })
 
-        logger.debug('scan sub packages', `pageFilePath: ${pageFile.filePath}`, `pagePath: ${pagePath}`, `root: ${root}`)
+        logger.debug('[scan sub packages]', `pageFilePath: ${pageFile.filePath}`, `pagePath: ${pagePath}`, `root: ${root}`)
 
         files.set(filePath, pageFile)
       }
@@ -55,7 +55,7 @@ export class FileManager {
       const pagePath = this.toPagePath(this.options.src, filePath)
       const pageFile = this.files.get(filePath) || new PageFile({ filePath, pagePath })
 
-      logger.debug('scan main package', `pageFilePath: ${pageFile.filePath}`, `pagePath: ${pagePath}`)
+      logger.debug('[scan main package]', `pageFilePath: ${pageFile.filePath}`, `pagePath: ${pagePath}`)
 
       files.set(filePath, pageFile)
     }
@@ -88,7 +88,7 @@ export class FileManager {
       const pagePath = this.toPagePath(subPackageDir, absFilePath)
       const pageFile = this.files.get(absFilePath) || new PageFile({ filePath: absFilePath, pagePath, root })
 
-      logger.debug('scan incremental sub package', `pageFilePath: ${pageFile.filePath}`, `pagePath: ${pagePath}`, `root: ${root}`)
+      logger.debug('[scan incremental sub package]', `pageFilePath: ${pageFile.filePath}`, `pagePath: ${pagePath}`, `root: ${root}`)
       this.files.set(absFilePath, pageFile)
 
       return pageFile
@@ -97,7 +97,7 @@ export class FileManager {
       const pagePath = this.toPagePath(this.options.src, absFilePath)
       const pageFile = this.files.get(absFilePath) || new PageFile({ filePath: absFilePath, pagePath })
 
-      logger.debug('scan incremental main package', `pageFilePath: ${pageFile.filePath}`, `pagePath: ${pagePath}`)
+      logger.debug('[scan incremental main package]', `pageFilePath: ${pageFile.filePath}`, `pagePath: ${pagePath}`)
 
       this.files.set(absFilePath, pageFile)
 

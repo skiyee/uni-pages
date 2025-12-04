@@ -5,17 +5,6 @@
 //
 // Repository: https://github.com/skiyee/uni-pages
 {
-  "globalStyle": {
-    "navigationBarTextStyle": "black",
-    "navigationBarBackgroundColor": "#F8F8F8",
-    "backgroundColor": "#F8F8F8", 
-    // #ifdef H5
-    "navigationBarTitleText": "uni-app H5",
-    // #endif
-    // #ifdef MP-WEIXIN
-    "navigationBarTitleText": "pages.config"
-    // #endif
-  },
   "pages": [
     {
       "path": "pages/index/index",
@@ -63,5 +52,16 @@
         }
       }
     }
-  ]
+  ],
+  "globalStyle": {
+    "navigationBarTextStyle": "black",
+    "navigationBarBackgroundColor": "#F8F8F8",
+    "backgroundColor": "#F8F8F8", 
+    // #ifdef H5
+    "navigationBarTitleText": "uni-app H5",
+    // #endif
+    // #ifdef MP-WEIXIN
+    "navigationBarTitleText": "pages.config"
+    // #endif
+  }
 }
