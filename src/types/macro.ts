@@ -1,17 +1,19 @@
-import type { BuiltInPlatform } from '@uni-helper/uni-env'
-
 import type { Page } from '../interface'
-import type { DeepPartial } from '../utils/types'
+import type { DeepMaybeIfdef } from '../utils/types'
+import type { PlatformValue } from './ifdef'
 
-export interface DefinePageFuncArgs {
-  platform: BuiltInPlatform;
-}
-
-export interface PageMeta extends DeepPartial<Page> {
+/**
+ * 页面元数据配置类型
+ *
+ * 支持两种形式：
+ * 1. 直接使用原始值
+ * 2. 使用平台值对象字面量进行条件编译
+ */
+export interface PageMeta extends DeepMaybeIfdef<Page> {
   /**
    * 标识 page 类型
    */
-  type?: 'page' | 'home';
+  type?: 'page' | 'home' | PlatformValue<'page' | 'home'>;
 
   /**
    * 配置页面路径
@@ -19,5 +21,3 @@ export interface PageMeta extends DeepPartial<Page> {
    */
   path?: string;
 }
-export type PageMetaFn = (arg: DefinePageFuncArgs) => PageMeta | Promise<PageMeta>
-export type PageMetaInput = PageMeta | PageMetaFn

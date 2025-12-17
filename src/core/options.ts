@@ -6,7 +6,6 @@ import process from 'node:process'
 import path from 'pathe'
 
 import { enableDebug } from '../utils/debug'
-import { PagesConfigFile } from './pages-config-file'
 
 export function resolvePluginOptions(options: UniPagesPluginOptions): ResolvedPluginOptions {
   let {
@@ -33,7 +32,6 @@ export function resolvePluginOptions(options: UniPagesPluginOptions): ResolvedPl
     : (typeof dts === 'string' && (path.isAbsolute(dts) ? path.join(root, dts) : path.resolve(src, dts)))
 
   const absPagesJsonFilePath = path.resolve(src, 'pages.json')
-  const absPagesConfigFileWatchPath = PagesConfigFile.getWatchPath(src)
 
   const watchPageFileDirs = [
     absPageDir,
@@ -49,7 +47,6 @@ export function resolvePluginOptions(options: UniPagesPluginOptions): ResolvedPl
     dts: absDts,
     debug,
     pagesJsonFilePath: absPagesJsonFilePath,
-    pagesConfigFileWatchPath: absPagesConfigFileWatchPath,
     watchPageFileDirs,
   }
 }

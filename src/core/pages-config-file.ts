@@ -1,140 +1,145 @@
-import type { BuiltInPlatform } from '@uni-helper/uni-env'
+import type { ConfigWatcher } from 'c12'
 
-import type { PagesJson } from '../interface'
-import type { DefineConfigInput } from '../types/config'
+import type { DefineConfigInput, PagesJsonConfig } from '../types/config'
 import type { ResolvedPluginOptions } from '../types/options'
 
-import fs from 'node:fs'
-
-import { platform as currentPlatform } from '@uni-helper/uni-env'
-import fg from 'fast-glob'
+import { watchConfig } from 'c12'
 import path from 'pathe'
 
 import { logger } from '../utils/debug'
 import { deepCopy } from '../utils/object'
-import { parseCode } from '../utils/parser'
 
-export async function defineConfig(args: DefineConfigInput): Promise<PagesJson> {
-  return args
+/**
+ * 定义 pages.config 配置
+ *
+ * @param args 配置对象，支持条件编译值
+ * @returns 配置对象
+ */
+export function defineConfig(args: DefineConfigInput): PagesJsonConfig {
+  return args as PagesJsonConfig
 }
 
+/**
+ * 配置更新回调类型
+ */
+export type OnConfigUpdateCallback = () => Promise<void> | void
+
+/**
+ * PagesConfigFile - 配置文件管理器
+ *
+ * - 配置文件加载
+ * - 文件变化监视（内置 chokidar）
+ * - 内容变化检测（通过 getDiff）
+ * - 防抖处理
+ */
 export class PagesConfigFile {
   /**
-   * pages.config 文件路径
+   * 配置监视器实例
    */
-  private filePath = ''
-  /**
-   * pages.config 文件内容
-   */
-  private currentCode = ''
-  /**
-   * 上次 pages.config 文件内容
-   */
-  private lastCode = ''
-  /**
-   * 文件是否有改动
-   */
-  private isChanged = true
-  /**
-   * json 内容
-   */
-  private jsonMap: Map<BuiltInPlatform, PagesJson> = new Map()
+  private watcher?: ConfigWatcher<PagesJsonConfig>
 
-  static readonly basename = 'pages.config'
-  static readonly exts = ['.ts', '.mts', '.cts', '.js', '.cjs', '.mjs']
-  static readonly globPath = `${PagesConfigFile.basename}.{${PagesConfigFile.exts.map(ext => ext.slice(1)).join(',')}}`
+  /**
+   * 当前配置缓存
+   */
+  private cachedConfig?: PagesJsonConfig
+
+  /**
+   * 配置文件路径
+   */
+  private configFilePath = ''
+
+  /**
+   * 配置更新回调函数
+   */
+  private onUpdateCallback?: OnConfigUpdateCallback
 
   constructor(private readonly options: ResolvedPluginOptions) {}
 
   /**
-   * 获取监听路径
+   * 初始化并加载配置文件
    */
-  static getWatchPath(src: string) {
-    return path.join(src, this.globPath)
-  }
+  async init(updateCallback: OnConfigUpdateCallback): Promise<void> {
+    logger.debug('初始化 pages.config 配置文件监视')
 
-  /**
-   * 初始检查
-   */
-  check() {
-    const pagesConfigFilePaths = fg.globSync(PagesConfigFile.globPath, {
+    this.onUpdateCallback = updateCallback
+
+    // 使用 watchConfig 进行初始加载，配置将在后续被复用
+    this.watcher = await watchConfig<PagesJsonConfig>({
       cwd: this.options.src,
-      absolute: true,
+      name: 'pages',
+      rcFile: false,
+      globalRc: false,
+      packageJson: false,
+      dotenv: false,
+      envName: false,
+      // 初始加载时禁用监视器的事件处理
+      onWatch: () => {},
+      acceptHMR: ({ getDiff }) => {
+        const diff = getDiff()
+        // 如果没有变化，返回 true 阻止 onUpdate 调用
+        return diff.length === 0
+      },
+      onUpdate: async ({ newConfig }) => {
+        this.cachedConfig = newConfig.config
+        logger.info('pages.config 配置已更新')
+
+        // 调用外部注册的回调
+        if (this.onUpdateCallback) {
+          await this.onUpdateCallback()
+        }
+      },
     })
-    if (pagesConfigFilePaths.length !== 0) {
-      this.setPath(pagesConfigFilePaths[0])
-      this.read()
+
+    if (this.watcher.configFile) {
+      this.configFilePath = path.normalize(this.watcher.configFile)
+      this.cachedConfig = this.watcher.config
+      logger.info('加载 pages.config 配置文件:', this.configFilePath)
     }
   }
 
   /**
-   * 设置文件路径
+   * 注册配置更新回调
+   * 当配置内容发生变化时会调用此回调
    */
-  setPath(filePath: string): void {
-    this.filePath = path.normalize(filePath)
+  onUpdate(callback: OnConfigUpdateCallback): void {
+    this.onUpdateCallback = callback
   }
 
   /**
-   * 是否有更改
+   * 获取当前配置文件路径
    */
-  get hasChanged() {
-    return this.isChanged
+  getPath(): string {
+    return this.configFilePath
   }
 
   /**
-   * 读取 pages.config 文件
+   * 获取正在监视的文件列表
    */
-  async read(): Promise<void> {
-    if (!this.filePath) {
+  getWatchingFiles(): string[] {
+    return this.watcher?.watchingFiles ?? []
+  }
+
+  /**
+   * 获取 pages.config 解析后的配置
+   * 返回的配置可能包含条件编译值
+   */
+  async get(): Promise<PagesJsonConfig | undefined> {
+    if (!this.configFilePath) {
       logger.warn('pages.config.x 配置文件不存在，请新增后再继续')
       return
     }
 
-    this.currentCode = await fs.promises.readFile(this.filePath, { encoding: 'utf-8' })
-
-    this.isChanged = this.currentCode !== this.lastCode
-    this.lastCode = this.currentCode
-
-    logger.info('已读取 pages.config 文件')
+    logger.debug('[get page config]', '获取 pages.config 配置')
+    return deepCopy(this.cachedConfig)
   }
 
   /**
-   * 获取 pages.config 解析后的 json
+   * 停止配置文件监视
    */
-  async getByPlatform(platform: BuiltInPlatform = currentPlatform, isForce: boolean = false): Promise<PagesJson | undefined> {
-    if (isForce) {
-      await this.read()
+  async unwatch(): Promise<void> {
+    if (this.watcher) {
+      await this.watcher.unwatch()
+      logger.debug('已停止 pages.config 配置文件监视')
     }
-
-    if (!this.filePath || !this.currentCode) {
-      return
-    }
-
-    // 如果没有被更改，尝试从缓冲获取
-    if (!this.isChanged) {
-      const json = this.jsonMap.get(platform)
-      if (json) {
-        logger.info('[get page config by platform]', `Platform: ${platform}`, '获取到缓冲的 pages.config 配置')
-        return deepCopy(json)
-      }
-    }
-
-    const parsed = await parseCode({
-      code: this.currentCode,
-      filename: this.filePath,
-      env: { UNI_PLATFORM: platform },
-    })
-
-    const res = typeof parsed === 'function'
-      ? await Promise.resolve(parsed({ platform }))
-      : await Promise.resolve(parsed)
-
-    this.jsonMap.set(platform, res)
-    logger.info('按平台储存 pages.config 配置')
-
-    this.isChanged = false
-
-    logger.info('获取到全新的 pages.config 配置')
-    return deepCopy(res)
   }
 }

@@ -1,13 +1,11 @@
-import type { BuiltInPlatform } from '@uni-helper/uni-env'
 import type { SFCDescriptor, SFCScriptBlock } from '@vue/compiler-sfc'
 
 import type { Page, TabBarItem } from '../interface'
-import type { PageMeta, PageMetaInput } from '../types/macro'
+import type { PageMeta } from '../types/macro'
 
 import fs from 'node:fs/promises'
 
 import * as t from '@babel/types'
-import { platform as currentPlatform } from '@uni-helper/uni-env'
 import { parse as VueParser } from '@vue/compiler-sfc'
 import { babelParse, isCallOf } from 'ast-kit'
 
@@ -54,8 +52,8 @@ export class PageFile {
   /** 上次的 definePageMeta 参数的代码 */
   private lastCode: string = ''
 
-  /** platform => page meta */
-  private metaMap: Map<BuiltInPlatform, PageMeta> = new Map()
+  /** 解析后的页面元数据缓存 */
+  private cachedMeta?: PageMeta
 
   private sfc?: SFCDescriptor
   private macro?: MacroInfo
@@ -71,15 +69,15 @@ export class PageFile {
     this.root = root
   }
 
-  async getTabbarItem({ platform = currentPlatform, forceRead = false }: { platform?: BuiltInPlatform; forceRead?: boolean } = {}): Promise<TabBarItem | undefined> {
+  async getTabbarItem({ forceRead = false }: { forceRead?: boolean } = {}): Promise<TabBarItem | undefined> {
     if (forceRead || !this.source) {
       await this.setBy()
     }
-    if (!this.metaMap.has(platform)) {
-      await this.parsePageMeta({ platform })
+    if (!this.cachedMeta) {
+      await this.parsePageMeta()
     }
 
-    const { tabbar } = this.metaMap.get(platform) || {}
+    const { tabbar } = this.cachedMeta || {}
     if (tabbar === undefined) {
       return
     }
@@ -171,8 +169,8 @@ export class PageFile {
 
     const [arg1] = res.macro.arguments
 
-    if (arg1 && !t.isFunctionExpression(arg1) && !t.isArrowFunctionExpression(arg1) && !t.isObjectExpression(arg1)) {
-      logger.warn(`definePageMeta() 参数仅支持函数或对象：${this.filePath}`)
+    if (!arg1 || !t.isObjectExpression(arg1)) {
+      logger.warn(`definePageMeta() 参数仅支持对象：${this.filePath}`)
       return
     }
 
@@ -196,45 +194,36 @@ export class PageFile {
     return this.macro
   }
 
-  async parsePageMeta({ platform = currentPlatform }: {
-    platform?: BuiltInPlatform;
-  } = {}): Promise<PageMeta | undefined> {
+  async parsePageMeta(): Promise<PageMeta | undefined> {
     if (!this.macro) {
-      this.metaMap.delete(platform)
+      this.cachedMeta = undefined
       return undefined
     }
 
     const parsed = await parseCode({
       code: this.macro.preparedCode,
       filename: this.filePath,
-      env: { UNI_PLATFORM: platform },
     })
 
-    const meta = typeof parsed === 'function'
-      ? await Promise.resolve(parsed({ platform }))
-      : await Promise.resolve(parsed)
-
-    this.metaMap.set(platform, meta)
-
+    this.cachedMeta = parsed
     this.isChanged = false
 
-    return meta
+    return parsed
   }
 
-  async getPageMeta({ platform = currentPlatform, forceRead = false }: {
-    platform?: BuiltInPlatform;
+  async getPageMeta({ forceRead = false }: {
     forceRead?: boolean;
   } = {}): Promise<Page> {
     if (forceRead || !this.source) {
       await this.setBy()
     }
 
-    // 如果被改变或者未被转义过
-    if (this.isChanged || !this.metaMap.has(platform)) {
-      await this.parsePageMeta({ platform })
+    // 如果被改变或者未被缓存
+    if (this.isChanged || !this.cachedMeta) {
+      await this.parsePageMeta()
     }
 
-    const { tabbar: _, path, type, ...others } = deepCopy(this.metaMap.get(platform) || {})
+    const { tabbar: _, path, type, ...others } = deepCopy(this.cachedMeta || {})
 
     return {
       path: path || this.pagePath,

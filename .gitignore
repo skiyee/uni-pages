@@ -1,10 +1,27 @@
+# Nuxt dev/build outputs
+.output
+.data
+.nuxt
+.nitro
 .cache
-.DS_Store
-.idea
-*.log
-*.tgz
-coverage
 dist
-lib-cov
+
+# Node dependencies
 node_modules
-temp
+
+# Logs
+logs
+*.log
+
+# Misc
+.DS_Store
+.fleet
+.idea
+
+# Local env files
+.env
+.env.*
+!.env.example
+
+# VSC
+.history

@@ -1,10 +1,6 @@
-import type { BuiltInPlatform } from '@uni-helper/uni-env'
-
 import type { PagesJson } from '../interface'
+import type { DeepMaybeIfdef } from '../utils/types'
 
-export interface DefineConfigFuncArgs {
-  platform: BuiltInPlatform;
-}
+export type PagesJsonConfig = PagesJson
 
-export type DefineConfigFn = (args: DefineConfigFuncArgs) => PagesJson | Promise<PagesJson>
-export type DefineConfigInput = PagesJson | DefineConfigFn
+export type DefineConfigInput = DeepMaybeIfdef<PagesJson>

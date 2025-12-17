@@ -1,9 +1,6 @@
-import type { BuiltInPlatform } from '@uni-helper/uni-env'
-
 import type { Page, SubPackage, TabBarItem } from '../interface'
 import type { ResolvedPluginOptions } from '../types/options'
 
-import { platform as currentPlatform } from '@uni-helper/uni-env'
 import anymatch from 'anymatch'
 import fg from 'fast-glob'
 import path from 'pathe'
@@ -153,8 +150,7 @@ export class FileManager {
   /**
    * 获取 pages 目录下的 PageFile
    */
-  async getMainPackageFiles(_platform: BuiltInPlatform): Promise<PageFile[]> {
-    // TODO: 平台过滤
+  async getMainPackageFiles(): Promise<PageFile[]> {
     const files: PageFile[] = []
     for (const [, pageFile] of this.files) {
       // 跳过分包的扫描
@@ -178,8 +174,7 @@ export class FileManager {
   /**
    * 获取 subPackages 目录下的 PageFile
    */
-  async getSubPackagesFiles(_platform: BuiltInPlatform): Promise<PageFile[]> {
-    // TODO: 平台过滤
+  async getSubPackagesFiles(): Promise<PageFile[]> {
     const files: PageFile[] = []
     for (const [, pageFile] of this.files) {
       // 跳过非分包的扫描
@@ -201,22 +196,22 @@ export class FileManager {
   }
 
   /**
-   * 根据 platform 获取符合pages.json的 主包页面参数
+   * 获取符合 pages.json 的主包页面参数
    */
-  async getMainPackageMetaList(platform = currentPlatform): Promise<Page[]> {
-    const pageFiles = await this.getMainPackageFiles(platform)
-    const mainPackageMetaList = await Promise.all(pageFiles.map(item => item.getPageMeta({ platform })))
+  async getMainPackageMetaList(): Promise<Page[]> {
+    const pageFiles = await this.getMainPackageFiles()
+    const mainPackageMetaList = await Promise.all(pageFiles.map(item => item.getPageMeta()))
 
-    logger.debug('[get main package meta list]', `platform: ${platform}`)
+    logger.debug('[get main package meta list]')
 
     return mainPackageMetaList
   }
 
   /**
-   * 根据 platform 获取符合pages.json的 分包组 页面参数
+   * 获取符合 pages.json 的分包组页面参数
    */
-  async getSubPackagesMetaList(platform = currentPlatform): Promise<SubPackage[]> {
-    const pageFiles = await this.getSubPackagesFiles(platform)
+  async getSubPackagesMetaList(): Promise<SubPackage[]> {
+    const pageFiles = await this.getSubPackagesFiles()
 
     const subPackages: Record<string, SubPackage> = {}
     for (const pageFile of pageFiles) {
@@ -227,7 +222,7 @@ export class FileManager {
 
       subPackages[pageFile.root] ??= { root: pageFile.root, pages: [] }
 
-      const pageMeta = await pageFile.getPageMeta({ platform })
+      const pageMeta = await pageFile.getPageMeta()
 
       subPackages[pageFile.root].pages ??= []
       subPackages[pageFile.root].pages.push(pageMeta)
@@ -235,26 +230,26 @@ export class FileManager {
 
     const subPackagesMetaList = Object.values(subPackages)
 
-    logger.debug('[get sub packages meta list]', `platform: ${platform}`)
+    logger.debug('[get sub packages meta list]')
 
     return subPackagesMetaList
   }
 
   /**
-   * 根据 platform 获取符合pages.json的 tabbar 页面参数
+   * 获取符合 pages.json 的 tabbar 页面参数
    */
-  async getTabbarMetaList(platform = currentPlatform): Promise<TabBarItem[]> {
-    const pageFiles = await this.getMainPackageFiles(platform)
+  async getTabbarMetaList(): Promise<TabBarItem[]> {
+    const pageFiles = await this.getMainPackageFiles()
 
     const tabbarMetaList: TabBarItem[] = []
     for (const pageFile of pageFiles) {
-      const item = await pageFile.getTabbarItem({ platform })
+      const item = await pageFile.getTabbarItem()
       if (item) {
         tabbarMetaList.push(item)
       }
     }
 
-    logger.debug('[get tabbar meta list]', `platform: ${platform}`)
+    logger.debug('[get tabbar meta list]')
 
     return tabbarMetaList
   }
